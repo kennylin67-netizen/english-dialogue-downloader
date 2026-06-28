@@ -1,0 +1,6 @@
+python_embed/
+audio_cache/
+config.json
+__pycache__/
+*.pyc
+*.pyo

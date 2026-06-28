@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英語對話語音下載器</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI','Microsoft JhengHei',sans-serif;background:linear-gradient(135deg,#4285f4,#0f9d58);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px}
+    .card{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:760px;box-shadow:0 20px 60px rgba(0,0,0,.22)}
+    h1{text-align:center;color:#1a73e8;font-size:1.55rem;margin-bottom:3px}
+    .sub{text-align:center;color:#999;font-size:.85rem;margin-bottom:20px}
+    .section{margin-bottom:18px}
+    label.lbl{display:block;font-weight:600;color:#444;margin-bottom:6px;font-size:.93rem}
+    input[type=password],input[type=text],select{width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:.95rem;transition:border-color .2s;background:#fff}
+    input:focus,select:focus{outline:none;border-color:#4285f4}
+    .hint{font-size:.76rem;color:#aaa;margin-top:5px}
+    .hint.ok{color:#0f9d58} .hint.err{color:#ea4335}
+    .key-row{display:flex;gap:8px;align-items:center}
+    .key-row input{flex:1}
+    .topic-row{display:flex;gap:8px;align-items:center}
+    .topic-row input{flex:1}
+    /* ── 聲音選擇 ── */
+    .voice-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+    .voice-box{background:#f8f9fa;border:1.5px solid #e8e8e8;border-radius:12px;padding:14px 16px}
+    .voice-box h4{font-size:.82rem;font-weight:700;color:#555;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+    .radio-group{display:flex;flex-direction:column;gap:8px}
+    .radio-group label{display:flex;align-items:center;gap:8px;font-size:.92rem;color:#333;cursor:pointer}
+    /* ── 對話展示 ── */
+    .dbox{background:#f8fbff;border:2px solid #d2e3fc;border-radius:12px;padding:14px 18px;font-size:.95rem;line-height:1.9;color:#333;display:none;white-space:pre-wrap;margin-bottom:14px;max-height:280px;overflow-y:auto}
+    .sa{color:#1a73e8;font-weight:700} .sb{color:#0f9d58;font-weight:700}
+    /* ── 補充單字 ── */
+    .vocab-panel{background:#fffde7;border:2px solid #ffe082;border-radius:12px;padding:14px 18px;min-height:60px;display:none;margin-bottom:18px}
+    .vocab-panel h3{font-size:.88rem;font-weight:700;color:#f57f17;margin-bottom:10px}
+    .vocab-item{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;font-size:.9rem;flex-wrap:wrap}
+    .vocab-word{font-weight:700;color:#e65100;min-width:130px}
+    .vocab-zh{color:#555}
+    .vocab-empty{color:#bbb;font-size:.85rem;font-style:italic}
+    /* ── 語速 ── */
+    .rate-box{background:#f8f9fa;border:1.5px solid #e8e8e8;border-radius:12px;padding:14px 16px;margin-bottom:18px}
+    .rate-box h4{font-size:.82rem;font-weight:700;color:#555;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+    .sl-hdr{display:flex;justify-content:space-between;margin-bottom:4px;font-size:.85rem;color:#555}
+    .sl-hdr span:last-child{font-weight:700;color:#1a73e8;min-width:40px;text-align:right}
+    input[type=range]{width:100%;accent-color:#4285f4;height:4px}
+    /* ── 按鈕 ── */
+    button{padding:11px 20px;border:none;border-radius:10px;font-size:.93rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+    .btn-blue{background:linear-gradient(135deg,#4285f4,#1a73e8);color:#fff}
+    .btn-blue:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 14px rgba(66,133,244,.4)}
+    .btn-blue:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .btn-green{background:linear-gradient(135deg,#0f9d58,#34a853);color:#fff}
+    .btn-green:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 14px rgba(15,157,88,.4)}
+    .btn-green:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .btn-red{background:linear-gradient(135deg,#ea4335,#fbbc04);color:#fff}
+    .btn-red:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(234,67,53,.35)}
+    .btn-red:disabled{opacity:.4;cursor:not-allowed;transform:none}
+    .btn-gray{background:#f0f0f0;color:#666}
+    .btn-gray:hover{background:#e0e0e0}
+    .btn-save{background:linear-gradient(135deg,#34a853,#0f9d58);color:#fff;padding:10px 16px}
+    .btn-row{display:flex;gap:10px;justify-content:center;margin-bottom:10px}
+    .prog{width:100%;height:5px;background:#e0e0e0;border-radius:3px;display:none;margin-bottom:10px;overflow:hidden}
+    .prog-fill{height:100%;background:linear-gradient(90deg,#4285f4,#0f9d58);border-radius:3px;transition:width .3s;width:0%}
+    .status{text-align:center;font-size:.88rem;min-height:20px;margin-bottom:10px}
+    .status.err{color:#ea4335}.status.ok{color:#0f9d58}.status.loading{color:#4285f4}
+    .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;margin-right:5px;vertical-align:middle}
+    @keyframes sp{to{transform:rotate(360deg)}}
+    .notice{background:#e8f5e9;border-left:4px solid #0f9d58;border-radius:8px;padding:10px 14px;font-size:.82rem;color:#2e7d32;margin-bottom:18px;line-height:1.7}
+    .notice a{color:#1a73e8;font-weight:600;text-decoration:none}
+    /* ── 說話方式 ── */
+    .style-grid{display:flex;flex-wrap:wrap;gap:8px}
+    .style-chip{display:flex;align-items:center;gap:6px;padding:7px 14px;background:#f0f4ff;border:1.5px solid #d2e3fc;border-radius:20px;font-size:.88rem;color:#444;cursor:pointer;transition:all .15s;user-select:none}
+    .style-chip:hover{background:#e3edff;border-color:#4285f4}
+    .style-chip input{accent-color:#4285f4;width:14px;height:14px}
+    .style-chip:has(input:checked){background:#4285f4;border-color:#4285f4;color:#fff;font-weight:600}
+    /* ── 補充單字 ── */
+    .vocab-item{font-size:.92rem;margin-bottom:5px;color:#333}
+    .vocab-word{font-weight:700;color:#e65100}
+    .vocab-zh{color:#555;margin-left:6px}
+    @media(max-width:560px){.voice-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>🎧 英語對話語音下載器</h1>
+  <p class="sub">Google AI Studio・依劍橋英檢分級・雙聲道朗讀・108課綱</p>
+
+  <div class="notice">
+    🔑 免費 API Key：<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>
+    → Create API key → Create API key in new project → 複製貼入下方
+  </div>
+
+  <!-- 1. API Key -->
+  <div class="section">
+    <label class="lbl">Google AI Studio API Key</label>
+    <div class="key-row">
+      <input type="password" id="apiKey" placeholder="貼上您的 API Key" value="{{ preset_api_key }}">
+      <button class="btn-save" onclick="saveKey()">💾 儲存</button>
+    </div>
+    <p class="hint" id="keyHint">* 點「儲存」將 Key 永久存入本機設定，下次自動帶入</p>
+  </div>
+
+  <!-- 2. 說話者聲音 -->
+  <div class="voice-grid">
+    <div class="voice-box">
+      <h4>🎙️ A 說話者</h4>
+      <div class="radio-group">
+        <label><input type="radio" name="voiceA" value="female" checked> 👩 女聲（Jenny）</label>
+        <label><input type="radio" name="voiceA" value="male"> 👨 男聲（Guy）</label>
+      </div>
+    </div>
+    <div class="voice-box">
+      <h4>🎙️ B 說話者</h4>
+      <div class="radio-group">
+        <label><input type="radio" name="voiceB" value="female"> 👩 女聲（Aria）</label>
+        <label><input type="radio" name="voiceB" value="male" checked> 👨 男聲（Andrew）</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 說話方式 -->
+  <div class="voice-grid">
+    <div class="voice-box">
+      <h4>🎙️ A 說話方式（可複選）</h4>
+      <div class="style-grid">
+        <label class="style-chip"><input type="checkbox" name="styleA" value="gentle"> 🌸 溫柔</label>
+        <label class="style-chip"><input type="checkbox" name="styleA" value="clear"> 🔊 清楚</label>
+        <label class="style-chip"><input type="checkbox" name="styleA" value="childlike"> 🧸 稚嫩</label>
+        <label class="style-chip"><input type="checkbox" name="styleA" value="lively"> ⚡ 活潑</label>
+        <label class="style-chip"><input type="checkbox" name="styleA" value="polite"> 🎩 有禮</label>
+        <label class="style-chip"><input type="checkbox" name="styleA" value="humorous"> 😄 幽默</label>
+      </div>
+    </div>
+    <div class="voice-box">
+      <h4>🎙️ B 說話方式（可複選）</h4>
+      <div class="style-grid">
+        <label class="style-chip"><input type="checkbox" name="styleB" value="gentle"> 🌸 溫柔</label>
+        <label class="style-chip"><input type="checkbox" name="styleB" value="clear"> 🔊 清楚</label>
+        <label class="style-chip"><input type="checkbox" name="styleB" value="childlike"> 🧸 稚嫩</label>
+        <label class="style-chip"><input type="checkbox" name="styleB" value="lively"> ⚡ 活潑</label>
+        <label class="style-chip"><input type="checkbox" name="styleB" value="polite"> 🎩 有禮</label>
+        <label class="style-chip"><input type="checkbox" name="styleB" value="humorous"> 😄 幽默</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 難度等級 + 主題 -->
+  <div class="section">
+    <label class="lbl">難度等級（劍橋英檢）</label>
+    <select id="level" style="margin-bottom:12px">
+      {% for key, lv in levels.items() %}
+      <option value="{{ key }}" {% if key=='movers' %}selected{% endif %}>{{ lv.name }}</option>
+      {% endfor %}
+    </select>
+    <label class="lbl">對話主題</label>
+    <div class="topic-row">
+      <input type="text" id="topic" placeholder="例如：My favorite food、At the school、Family members">
+      <button class="btn-blue" id="genBtn" onclick="generate()">✨ 生成對話</button>
+    </div>
+  </div>
+
+  <!-- 4. 生成的對話 -->
+  <div id="dbox" class="dbox"></div>
+
+  <!-- 5. 補充單字 -->
+  <div id="vocabPanel" class="vocab-panel">
+    <h3>📚 補充單字／片語（超出設定等級的詞彙）</h3>
+    <div id="vocabList"><span class="vocab-empty">生成對話後自動顯示</span></div>
+  </div>
+
+  <!-- 6. 語速 -->
+  <div class="rate-box">
+    <h4>⚙️ 語速調整</h4>
+    <div class="sl-hdr"><span>語速（語音快慢）</span><span id="rateVal">0%</span></div>
+    <input type="range" id="rateSlider" min="-50" max="50" step="5" value="0"
+           oninput="document.getElementById('rateVal').textContent=this.value+'%'">
+    <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#bbb;margin-top:4px"><span>慢 -50%</span><span>快 +50%</span></div>
+  </div>
+
+  <!-- 進度 / 狀態 -->
+  <div class="prog" id="prog"><div class="prog-fill" id="progFill"></div></div>
+  <div class="status" id="status"></div>
+
+  <!-- 按鈕列 -->
+  <div class="btn-row">
+    <button class="btn-gray" onclick="clearAll()">🗑️ 清除</button>
+    <button class="btn-green" id="audioBtn" onclick="synthesize()">🎙️ 生成音檔</button>
+    <button class="btn-red"   id="dlBtn"    onclick="downloadAudio()" disabled>⬇️ 下載 MP3</button>
+  </div>
+  <div style="text-align:center">
+    <audio id="player" controls style="width:100%;margin-top:6px;display:none"></audio>
+  </div>
+</div>
+
+<script>
+const BASE = 'http://127.0.0.1:5000';
+let audioId = null;
+let currentDialogue = '';
+
+const saved = localStorage.getItem('gemini_key');
+if (saved && !document.getElementById('apiKey').value) document.getElementById('apiKey').value = saved;
+
+function setStatus(msg, type='') {
+  const el = document.getElementById('status');
+  el.textContent = msg; el.className = 'status ' + type;
+}
+function setProgress(pct) { document.getElementById('progFill').style.width = pct + '%'; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function saveKey() {
+  const key = document.getElementById('apiKey').value.trim();
+  const hint = document.getElementById('keyHint');
+  if (!key) { hint.className='hint err'; hint.textContent='請先輸入 Key'; return; }
+  try {
+    const r = await fetch(BASE+'/save_key', { method:'POST',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({api_key:key}) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    localStorage.setItem('gemini_key', key);
+    hint.className='hint ok'; hint.textContent='✅ Key 已儲存！下次自動帶入。';
+  } catch(e) { hint.className='hint err'; hint.textContent='❌ '+e.message; }
+}
+
+function renderDialogue(text) {
+  currentDialogue = text;
+  const box = document.getElementById('dbox');
+  box.style.display='block'; box.innerHTML='';
+  text.split('\n').forEach(line => {
+    const d = document.createElement('div');
+    if (line.startsWith('A:')) d.innerHTML='<span class="sa">A:</span>'+esc(line.slice(2));
+    else if (line.startsWith('B:')) d.innerHTML='<span class="sb">B:</span>'+esc(line.slice(2));
+    else d.textContent=line;
+    box.appendChild(d);
+  });
+}
+
+function renderVocab(vocab) {
+  const panel = document.getElementById('vocabPanel');
+  const list  = document.getElementById('vocabList');
+  panel.style.display = 'block';
+  if (!vocab || vocab.length === 0) {
+    list.innerHTML = '<span class="vocab-empty">✅ 此對話的詞彙符合設定等級，無需補充說明。</span>';
+    return;
+  }
+  list.innerHTML = vocab.map(v =>
+    `<div class="vocab-item"><span class="vocab-word">${esc(v.word)}</span><span class="vocab-zh">${esc(v.zh)}</span></div>`
+  ).join('');
+}
+
+function getStyles(name) {
+  return Array.from(document.querySelectorAll(`input[name=${name}]:checked`)).map(el => el.value);
+}
+
+async function generate() {
+  const topic  = document.getElementById('topic').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const level  = document.getElementById('level').value;
+  if (!apiKey) { setStatus('請先輸入 API Key','err'); return; }
+  if (!topic)  { setStatus('請輸入對話主題','err'); return; }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>生成中...';
+  setStatus('正在生成對話，請稍候...','loading');
+  audioId=null; currentDialogue='';
+  document.getElementById('dlBtn').disabled=true;
+  document.getElementById('player').style.display='none';
+  document.getElementById('dbox').style.display='none';
+  document.getElementById('vocabPanel').style.display='none';
+
+  try {
+    const voiceA  = document.querySelector('input[name=voiceA]:checked').value;
+    const voiceB  = document.querySelector('input[name=voiceB]:checked').value;
+    const stylesA = getStyles('styleA');
+    const stylesB = getStyles('styleB');
+    const r = await fetch(BASE+'/generate', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ topic, api_key:apiKey, level, voice_a:voiceA, voice_b:voiceB, styles_a:stylesA, styles_b:stylesB }) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    renderDialogue(d.dialogue);
+    renderVocab(d.vocabulary);
+    setStatus(`✅ 對話生成完成！（${d.level_name} ／ 模型: ${d.model}）`, 'ok');
+  } catch(e) { setStatus('❌ '+e.message,'err'); }
+  finally { btn.disabled=false; btn.innerHTML='✨ 生成對話'; }
+}
+
+async function synthesize() {
+  if (!currentDialogue) { setStatus('請先生成對話','err'); return; }
+
+  const voiceA   = document.querySelector('input[name=voiceA]:checked').value;
+  const voiceB   = document.querySelector('input[name=voiceB]:checked').value;
+  const baseRate = parseInt(document.getElementById('rateSlider').value);
+
+  const btn = document.getElementById('audioBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>生成中...';
+  document.getElementById('prog').style.display='block'; setProgress(30);
+  setStatus('正在生成雙聲道音檔，請稍候...','loading');
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 120000);
+    const r = await fetch(BASE+'/synthesize', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ dialogue:currentDialogue, voice_a:voiceA, voice_b:voiceB, base_rate:baseRate }),
+      signal: controller.signal });
+    clearTimeout(timer);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    audioId = d.audio_id;
+    setProgress(100);
+    const player = document.getElementById('player');
+    player.src = BASE+'/download/'+audioId+'?t='+Date.now();
+    player.style.display='block';
+    document.getElementById('dlBtn').disabled=false;
+    setStatus('✅ 音檔生成完成！可播放或下載。','ok');
+  } catch(e) {
+    setStatus('❌ '+e.message,'err');
+  } finally {
+    btn.disabled=false; btn.innerHTML='🎙️ 生成音檔';
+    document.getElementById('prog').style.display='none'; setProgress(0);
+  }
+}
+
+function downloadAudio() {
+  if (!audioId) return;
+  const a = document.createElement('a');
+  a.href = BASE+'/download/'+audioId;
+  a.download = 'english_dialogue.mp3'; a.click();
+}
+
+function clearAll() {
+  currentDialogue=''; audioId=null;
+  document.getElementById('dbox').style.display='none';
+  document.getElementById('vocabPanel').style.display='none';
+  document.getElementById('topic').value='';
+  document.getElementById('player').style.display='none';
+  document.getElementById('dlBtn').disabled=true;
+  document.getElementById('rateSlider').value=0;
+  document.getElementById('rateVal').textContent='0%';
+  setStatus('');
+}
+
+document.getElementById('topic').addEventListener('keydown', e => { if(e.key==='Enter') generate(); });
+</script>
+</body>
+</html>
