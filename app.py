@@ -4,6 +4,7 @@ import uuid
 import json
 import asyncio
 import re
+import random
 from flask import Flask, request, jsonify, send_file, render_template
 from flask_cors import CORS
 from google import genai
@@ -237,7 +238,6 @@ def generate():
     if not topic:   return jsonify({"error": "請輸入主題"}), 400
     if not api_key: return jsonify({"error": "請輸入 API Key"}), 400
 
-    import random
     name_a = random.choice(SPEAKER_NAMES[gender_a])
     name_b = random.choice(SPEAKER_NAMES[gender_b])
     while name_b == name_a:
